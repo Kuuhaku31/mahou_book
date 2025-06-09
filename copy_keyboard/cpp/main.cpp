@@ -1,264 +1,98 @@
-
-#include <conio.h>
+#include <codecvt>
 #include <fstream>
 #include <iostream>
+#include <locale>
+#include <sstream>
+#include <string>
 #include <vector>
 #include <windows.h>
 
-void
-SendUnicodeChar(wchar_t c)
-{
-    INPUT input;
-    ZeroMemory(&input, sizeof(INPUT));
-    input.type = INPUT_KEYBOARD;
 
-    input.ki.wScan   = c;
+void
+SendSpecialKey(WORD vk)
+{
+    keybd_event(vk, 0, 0, 0);               // æŒ‰ä¸‹é”®
+    keybd_event(vk, 0, KEYEVENTF_KEYUP, 0); // é‡Šæ”¾é”®
+}
+
+void
+SendUnicodeChar(wchar_t ch)
+{
+    INPUT input      = { 0 };
+    input.type       = INPUT_KEYBOARD;
+    input.ki.wScan   = ch;
     input.ki.dwFlags = KEYEVENTF_UNICODE;
+    SendInput(1, &input, sizeof(INPUT));
 
+    // Key up
+    input.ki.dwFlags = KEYEVENTF_UNICODE | KEYEVENTF_KEYUP;
     SendInput(1, &input, sizeof(INPUT));
 }
 
 void
-SendVKCode(wchar_t c)
+SendTextWithControl(const std::wstring& text, int delay = 0)
 {
-    INPUT input;
-    ZeroMemory(&input, sizeof(INPUT));
-    input.type = INPUT_KEYBOARD;
-
-    input.ki.wVk = c;
-
-    SendInput(1, &input, sizeof(INPUT));
-}
-
-void
-Copy()
-{
-    std::vector<wchar_t> charArray;
-    std::wifstream       file(L"./test.txt"); // Ìæ»»ÎªÄãµÄÎÄ¼şÂ·¾¶
-    file.imbue(std::locale(""));              // Ê¹ÓÃÓÃ»§µÄÄ¬ÈÏlocale
-
-    if(file.is_open())
+    for(wchar_t ch : text)
     {
-        wchar_t c;
-        while(file.get(c))
+        switch(ch)
         {
-            charArray.push_back(c);
-        }
-        file.close();
-    }
-    else
-    {
-        std::cout << "error\n";
-        return;
-    }
-
-    std::cout << "°´ÏÂEnter¿ªÊ¼³­Ğ´...\n";
-    while(!(GetKeyState(VK_RETURN) & 0x8000));
-    while(GetKeyState(VK_RETURN) & 0x8000);
-    std::cout << "==========================================================\n";
-
-    for(wchar_t c : charArray)
-    {
-        std::wcout << c;
-
-        switch(c)
-        {
-        case '\n':
-            SendVKCode(VK_RETURN);
+        case L'\n':
+            SendSpecialKey(VK_RETURN); // æ¨¡æ‹Ÿ Enter é”®
             break;
-        case '\t':
-            SendVKCode(VK_TAB);
+        case L'\t':
+            SendSpecialKey(VK_TAB); // æ¨¡æ‹Ÿ Tab é”®
             break;
         default:
-            SendUnicodeChar(c);
-            break;
+            SendUnicodeChar(ch); // å…¶ä»–å­—ç¬¦ç›´æ¥å‘ Unicode
         }
-
-        if((GetKeyState(VK_SPACE) & 0x8000))
-        {
-            break;
-        }
-        Sleep(1);
+        Sleep(delay);
     }
-
-    std::cout << "\n==========================================================\n³­Ğ´½áÊø\n";
 }
 
-// ÊÊÓ¦¶ÁÈ¡¹¦ÄÜ
-void
-MCopy()
+
+std::wstring
+ReadFile(const std::string& filePath)
 {
-    std::vector<wchar_t> charArray;
-    std::wifstream       file(L"./test.txt"); // Ìæ»»ÎªÄãµÄÎÄ¼şÂ·¾¶
-    file.imbue(std::locale(""));              // Ê¹ÓÃÓÃ»§µÄÄ¬ÈÏlocale
-
-    if(file.is_open())
+    // æ‰“å¼€æ–‡ä»¶ä¸ºæ–‡æœ¬è¾“å…¥æµ
+    std::ifstream file(filePath, std::ios::in | std::ios::binary);
+    if(!file)
     {
-        wchar_t c;
-        while(file.get(c))
-        {
-            charArray.push_back(c);
-        }
-        file.close();
-    }
-    else
-    {
-        std::cout << "error\n";
-        return;
+        throw std::runtime_error("æ— æ³•æ‰“å¼€æ–‡ä»¶: " + filePath);
     }
 
-    std::cout << "°´ÏÂEnter¿ªÊ¼ÊÊÓ¦³­Ğ´...\n";
-    while(!(GetKeyState(VK_RETURN) & 0x8000));
-    while(GetKeyState(VK_RETURN) & 0x8000);
-    std::cout << "==========================================================\n";
+    // è¯»å–æ•´ä¸ªæ–‡ä»¶å†…å®¹åˆ°å­—ç¬¦ä¸²
+    std::ostringstream oss;
+    oss << file.rdbuf();
+    std::string utf8Str = oss.str();
 
-    for(wchar_t c : charArray)
-    {
-        std::wcout << c;
+    // å°† UTF-8 ç¼–ç çš„ std::string è½¬æ¢ä¸º std::wstringï¼ˆå®½å­—ç¬¦ï¼‰
+    std::wstring_convert<std::codecvt_utf8_utf16<wchar_t>> converter;
 
-        switch(c)
-        {
-        case '{':
-        case '[':
-        case '(':
-            SendUnicodeChar(c);
-            SendVKCode(VK_DELETE);
-            break;
+    std::wstring wideStr = converter.from_bytes(utf8Str);
 
-        case '\n':
-            SendUnicodeChar(' ');
-            SendVKCode(VK_RETURN);
-            SendVKCode(VK_HOME);
-            break;
-
-        default:
-            SendUnicodeChar(c);
-            break;
-        }
-
-        if((GetKeyState(VK_SPACE) & 0x8000))
-        {
-            break;
-        }
-        Sleep(1);
-    }
-
-    std::cout << "\n==========================================================\n³­Ğ´½áÊø\n";
+    return wideStr;
 }
 
-// ²»Òª»»ĞĞ
-void
-CCopy()
-{
-    std::vector<wchar_t> charArray;
-    std::wifstream       file(L"./test.txt"); // Ìæ»»ÎªÄãµÄÎÄ¼şÂ·¾¶
-    file.imbue(std::locale(""));              // Ê¹ÓÃÓÃ»§µÄÄ¬ÈÏlocale
-
-    if(file.is_open())
-    {
-        wchar_t c;
-        while(file.get(c))
-        {
-            charArray.push_back(c);
-        }
-        file.close();
-    }
-    else
-    {
-        std::cout << "error\n";
-        return;
-    }
-
-    std::cout << "°´ÏÂEnter¿ªÊ¼ÊÊÓ¦³­Ğ´...\n";
-    while(!(GetKeyState(VK_RETURN) & 0x8000));
-    while(GetKeyState(VK_RETURN) & 0x8000);
-    std::cout << "==========================================================\n";
-
-    bool is_space = true;
-    bool is_in    = false;
-    for(wchar_t c : charArray)
-    {
-        std::wcout << c;
-
-        switch(c)
-        {
-        case '#':
-            is_in = true;
-            SendVKCode(VK_RETURN);
-            SendVKCode(VK_HOME);
-            SendUnicodeChar(c);
-            break;
-
-        case '\n':
-            if(is_in)
-            {
-                is_in = false;
-                SendVKCode(VK_RETURN);
-                SendVKCode(VK_HOME);
-            }
-            break;
-
-        case ' ':
-            if(is_space)
-            {
-                is_space = false;
-                SendUnicodeChar(c);
-            }
-            break;
-
-        default:
-            is_space = true;
-            SendUnicodeChar(c);
-            break;
-        }
-
-        if((GetKeyState(VK_SPACE) & 0x8000))
-        {
-            break;
-        }
-        Sleep(1);
-    }
-
-    std::cout << "\n==========================================================\n³­Ğ´½áÊø\n";
-}
-
-void
-fun_01()
-{
-    setlocale(LC_ALL, "chs"); // ÉèÖÃlocaleÎªÖĞÎÄ(¼òÌå)
-
-    char i = 0;
-    while('q' != i)
-    {
-        std::cout << "°´ÏÂ'N'¼ü¿ªÊ¼¶ÁÈ¡\n°´ÏÂ'M'¼ü¿ªÊ¼ÊÊÓ¦¶ÁÈ¡\n°´ÏÂ'Q'¼üÍË³ö...\n";
-        i = 0;
-        i = _getch();
-
-        switch(i)
-        {
-        case 'n':
-            Copy();
-            break;
-
-        case 'm':
-            MCopy();
-            break;
-
-        case 'c':
-            CCopy();
-            break;
-
-        default:
-            break;
-        }
-    }
-
-    std::cout << "³ÌĞòÒÑÍË³ö£º£©\n";
-}
 
 int
 main()
 {
-    fun_01();
+    printf("test\n");
+
+
+    std::string  filePath = "../ignore/context.txt";
+    std::wstring text     = ReadFile(filePath);
+    if(text.empty())
+    {
+        std::wcerr << L"No text to send." << std::endl;
+        return 1;
+    }
+
+    std::wcout << L"Text to send: " << text << std::endl;
+
+    Sleep(1000); // Wait for a second before sending text
+
+    SendTextWithControl(text);
+
     return 0;
 }
