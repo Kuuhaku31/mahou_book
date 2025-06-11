@@ -7,9 +7,9 @@ from helps import 打印帮助信息
 class 启动:
     def __init__(self):
         self.模式: str = ""
-        self.目标文件地址: str = ""
-        self.源文件地址: str = ""
-        self.目标circuit名称: str = ""
+        self.目标: str = ""
+        self.源: str = ""
+        self.circuit名称: str = ""
         self.是否删除原先的像素信息: bool = False
 
     def 解析参数(self, args: list):
@@ -19,13 +19,13 @@ class 启动:
                 self.模式 = args[i + 1]
                 i += 2
             elif args[i] == "-t" and i + 1 < len(args):
-                self.目标文件地址 = args[i + 1]
+                self.目标 = args[i + 1]
                 i += 2
             elif args[i] == "-s" and i + 1 < len(args):
-                self.源文件地址 = args[i + 1]
+                self.源 = args[i + 1]
                 i += 2
             elif args[i] == "-l" and i + 1 < len(args):
-                self.目标circuit名称 = args[i + 1]
+                self.circuit名称 = args[i + 1]
                 i += 2
             elif args[i] == "-rm_current":
                 self.是否删除原先的像素信息 = True
@@ -42,32 +42,38 @@ class 启动:
     def 是否可以启动模式(self) -> str:
 
         if self.模式 == "del":
-            if not self.目标文件地址 or not self.目标circuit名称:
+            if not self.目标 or not self.circuit名称:
                 print("删除模式启动失败: 请提供 -t 和 -l 参数")
                 return "False"
             else:
                 return self.模式
         elif self.模式 == "add":
-            if not self.目标文件地址 or not self.目标circuit名称 or not self.源文件地址:
+            if not self.目标 or not self.circuit名称 or not self.源:
                 print("添加模式启动失败: 请提供 -t、-s 和 -l 参数")
                 return "False"
             else:
                 return self.模式
         elif self.模式 == "conv":
-            if not self.目标文件地址 or not self.源文件地址 or not self.目标circuit名称:
+            if not self.目标 or not self.源 or not self.circuit名称:
                 print("转换模式启动失败: 请提供 -t、-s 和 -l 参数")
                 return "False"
             else:
                 return self.模式
         elif self.模式 == "load":
-            if not self.目标文件地址 or not self.源文件地址 or not self.目标circuit名称:
+            if not self.目标 or not self.源 or not self.circuit名称:
                 print("加载模式启动失败: 请提供 -t、-s 和 -l 参数")
                 return "False"
             else:
                 return self.模式
         elif self.模式 == "store":
-            if not self.目标文件地址 or not self.源文件地址 or not self.目标circuit名称:
+            if not self.目标 or not self.源 or not self.circuit名称:
                 print("存储模式启动失败: 请提供 -t、-s 和 -l 参数")
+                return "False"
+            else:
+                return self.模式
+        elif self.模式 == "去图":
+            if not self.目标 or not self.源:
+                print("去图模式启动失败: 请提供 -t 和 -s 参数")
                 return "False"
             else:
                 return self.模式

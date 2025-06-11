@@ -215,6 +215,41 @@ def 添加像素信息_从circ文件_到库(
     print(f"已将 {目标circuit名称} 标签下的像素信息存储到 {文件地址}")
 
 
+# 源 circ 文件中去除**所有** circuit 标签下的所有像素，并保存到目标地址
+def 去图(目标circ文件地址: str, 源circuit地址: str) -> None:
+
+    print(f"正在从 {源circuit地址} 中去除所有像素信息，并保存到 {目标circ文件地址}")
+
+    # 获取源 circ 文件的内容
+    # 以及将所有像素信息清除
+    with open(源circuit地址, "r", encoding="utf-8") as f:
+        不变的html_content = f.read()
+
+        # 获取源 circ 文件的所有 circuit 标签名称
+        circuit_name_list = re.findall(r'<circuit\s+name="([^"]+)"', 不变的html_content)
+
+        for circuit名称 in circuit_name_list:
+            清除原有像素(源circuit地址, circuit名称)
+
+    # 再次读取源 circ 文件的内容
+    # 这时所有像素信息都已被清除
+    with open(源circuit地址, "r", encoding="utf-8") as f:
+        去图的html_content = f.read()
+
+    # 将不变的 HTML 内容保存到源地址
+    # 这一步是为了确保源地址的内容不变
+    with open(源circuit地址, "w", encoding="utf-8") as f:
+        f.write(不变的html_content)
+
+    # 这里写入的内容是去除所有像素信息后的 HTML 内容
+    # 保存到目标地址
+    # 如果文件不存在，则创建一个空文件
+    with open(目标circ文件地址, "w", encoding="utf-8") as f:
+        f.write(去图的html_content)
+
+    print(f"已将 {源circuit地址} 中的所有像素信息去除，并保存到 {目标circ文件地址}")
+
+
 # main
 if __name__ == "__main__":
 
@@ -231,40 +266,43 @@ if __name__ == "__main__":
         sys.exit(1)
 
     elif 模式 == "del":
-        清除原有像素(启.目标文件地址, 启.目标circuit名称)
+        清除原有像素(启.目标, 启.circuit名称)
 
     elif 模式 == "add":
         if 启.是否删除原先的像素信息:
-            清除原有像素(启.目标文件地址, 启.目标circuit名称)
+            清除原有像素(启.目标, 启.circuit名称)
 
-        像素信息 = 解析图像文件(启.源文件地址, 50, 40)  # 这里dx, dy可根据需要调整
+        像素信息 = 解析图像文件(启.源, 50, 40)  # 这里dx, dy可根据需要调整
         添加新像素(
-            启.目标文件地址,
-            启.目标circuit名称,
+            启.目标,
+            启.circuit名称,
             像素信息,
         )
 
     elif 模式 == "conv":
-        像素信息 = 解析图像文件(启.源文件地址, 50, 40)
+        像素信息 = 解析图像文件(启.源, 50, 40)
         保存像素信息到html文件(
-            启.目标文件地址,
+            启.目标,
             像素信息,
-            启.目标circuit名称,
+            启.circuit名称,
         )
 
     elif 模式 == "load":
         添加像素信息_从库_到circ文件(
-            启.目标文件地址,
-            启.目标circuit名称,
-            启.源文件地址,
+            启.目标,
+            启.circuit名称,
+            启.源,
             启.是否删除原先的像素信息,
         )
 
     elif 模式 == "store":
         添加像素信息_从circ文件_到库(
-            启.目标文件地址,
-            启.目标circuit名称,
-            启.源文件地址,
+            启.目标,
+            启.circuit名称,
+            启.源,
         )
+
+    elif 模式 == "去图":
+        去图(启.目标, 启.源)
 
     print("程序结束")
