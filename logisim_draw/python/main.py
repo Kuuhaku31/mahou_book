@@ -1,11 +1,11 @@
 # Logisim Draw
 
 import os
-import re
 import sys
 
 from helps import 打印帮助信息
 from init import 启动
+from logisim import Logisim内容
 from PIL import Image
 from tqdm import tqdm
 
@@ -84,71 +84,6 @@ def 保存像素信息到html文件(库文件夹路径: str, 像素信息: str, 
     print(f"像素信息已保存到 {文件地址}")
 
 
-# 函数逻辑：
-# 遍历 <appear> 标签下的所有标签
-# 仅删除 height="1" 且 width="1" 的 <rect> 标签
-def 清除原有像素(目标circ文件地址: str, 目标circuit名称: str) -> None:
-    with open(目标circ文件地址, "r", encoding="utf-8") as f:
-        html_content = f.read()
-
-    # 找到指定circuit下的<appear>...</appear>
-    pattern = rf'(<circuit\s+name="{re.escape(目标circuit名称)}"[^>]*>.*?<appear>)(.*?)(</appear>)'
-    match = re.search(pattern, html_content, flags=re.DOTALL)
-    if not match:
-        print("未找到指定circuit或appear标签")
-        return
-
-    appear_content = match.group(2)
-
-    # 删除 height="1" 且 width="1" 的 <rect> 标签
-    appear_content = re.sub(r'<rect[^>]*height="1"[^>]*width="1"[^>]*\/>', "", appear_content)
-
-    # 替换 appear 内容
-    new_html = re.sub(pattern, rf"\1\n{appear_content}\3", html_content, flags=re.DOTALL)
-
-    with open(目标circ文件地址, "w", encoding="utf-8") as f:
-        f.write(new_html)
-
-
-# 添加新像素到指定的circuit标签下的<appear>标签中
-def 添加新像素(目标circ文件地址: str, 目标circuit名称: str, 新内容: str) -> None:
-    with open(目标circ文件地址, "r", encoding="utf-8") as f:
-        html_content = f.read()
-
-    # 找到指定circuit下的<appear>...</appear>
-    pattern = rf'(<circuit\s+name="{re.escape(目标circuit名称)}"[^>]*>.*?<appear>)(.*?)(</appear>)'
-    match = re.search(pattern, html_content, flags=re.DOTALL)
-    if not match:
-        print("未找到指定circuit或appear标签")
-        return
-
-    appear_content = match.group(2)
-
-    # 在 appear_content 中添加新内容
-    appear_content += 新内容
-
-    # 替换 appear 内容
-    new_html = re.sub(pattern, rf"\1\n{appear_content}\3", html_content, flags=re.DOTALL)
-
-    with open(目标circ文件地址, "w", encoding="utf-8") as f:
-        f.write(new_html)
-
-
-# 获取指定 circ 文件中指定 circuit 标签下的像素信息
-def 获取像素信息(目标circ文件地址: str, 目标circuit名称: str) -> str:
-    with open(目标circ文件地址, "r", encoding="utf-8") as f:
-        html_content = f.read()
-
-    # 找到指定circuit下的<appear>...</appear>
-    pattern = rf'(<circuit\s+name="{re.escape(目标circuit名称)}"[^>]*>.*?<appear>)(.*?)(</appear>)'
-    match = re.search(pattern, html_content, flags=re.DOTALL)
-    if not match:
-        print(f"未找到指定circuit: {目标circuit名称} 或 appear 标签")
-        return ""
-
-    return match.group(2)  # 返回 appear 标签中的内容
-
-
 # 从指定的 HTML 文件加载像素信息到目标 circ 文件
 def 添加像素信息_从库_到circ文件(
     目标circ文件地址: str,
@@ -176,11 +111,16 @@ def 添加像素信息_从库_到circ文件(
     源circuit名称 = lines[0].strip()  # 第一行是circuit标签名称
     新内容 = "\n".join(lines[1:])  # 剩余行是像素信息
 
+    # 初始化 Logisim内容对象
+    logisim内容 = Logisim内容()
+    logisim内容.从文件加载内容(目标circ文件地址)
+
     # 如果需要删除原有像素信息
     if 是否删除原先的像素信息:
-        清除原有像素(目标circ文件地址, 源circuit名称)
+        logisim内容.清除原有像素(源circuit名称)
 
-    添加新像素(目标circ文件地址, 源circuit名称, 新内容)
+    logisim内容.添加新像素(源circuit名称, 新内容)
+    logisim内容.保存内容到文件(目标circ文件地址)  # 保存到目标 circ 文件
 
     print(f"已从 {文件地址} 加载像素信息到 {目标circ文件地址} 的 {目标circuit名称} 标签下")
 
@@ -194,19 +134,20 @@ def 添加像素信息_从circ文件_到库(
     目标circuit名称: str,
     像素库的文件夹路径: str,
 ) -> None:
+    print(f"正在将 {目标circuit名称} 标签下的像素信息存储到 {像素库的文件夹路径}")
 
-    # 读取目标 circ 文件的目标 circuit 下的像素信息
-    像素信息: str = 获取像素信息(目标circ文件地址, 目标circuit名称)
-    if not 像素信息:
-        return
+    # 初始化 Logisim内容对象
+    logisim内容 = Logisim内容()
+    logisim内容.从文件加载内容(目标circ文件地址)
+    像素信息 = logisim内容.获取像素信息(目标circuit名称)
 
+    # 写入文件
+    # 会覆盖掉原有的同名文件
     # 确保输出目录存在
     文件地址 = 确保目标html文件存在(像素库的文件夹路径, 目标circuit名称)
     if not 文件地址:
         return
 
-    # 写入文件
-    # 会覆盖掉原有的同名文件
     with open(文件地址, "w", encoding="utf-8") as f:
         f.write(目标circuit名称)
         f.write("\n")
@@ -220,32 +161,11 @@ def 去图(目标circ文件地址: str, 源circuit地址: str) -> None:
 
     print(f"正在从 {源circuit地址} 中去除所有像素信息，并保存到 {目标circ文件地址}")
 
-    # 获取源 circ 文件的内容
-    # 以及将所有像素信息清除
-    with open(源circuit地址, "r", encoding="utf-8") as f:
-        不变的html_content = f.read()
-
-        # 获取源 circ 文件的所有 circuit 标签名称
-        circuit_name_list = re.findall(r'<circuit\s+name="([^"]+)"', 不变的html_content)
-
-        for circuit名称 in circuit_name_list:
-            清除原有像素(源circuit地址, circuit名称)
-
-    # 再次读取源 circ 文件的内容
-    # 这时所有像素信息都已被清除
-    with open(源circuit地址, "r", encoding="utf-8") as f:
-        去图的html_content = f.read()
-
-    # 将不变的 HTML 内容保存到源地址
-    # 这一步是为了确保源地址的内容不变
-    with open(源circuit地址, "w", encoding="utf-8") as f:
-        f.write(不变的html_content)
-
-    # 这里写入的内容是去除所有像素信息后的 HTML 内容
-    # 保存到目标地址
-    # 如果文件不存在，则创建一个空文件
-    with open(目标circ文件地址, "w", encoding="utf-8") as f:
-        f.write(去图的html_content)
+    # 初始化 Logisim内容对象
+    logisim内容 = Logisim内容()
+    logisim内容.从文件加载内容(源circuit地址)
+    logisim内容.清除所有原有像素()  # 清除所有 circuit 标签下的原有像素
+    logisim内容.保存内容到文件(目标circ文件地址)  # 保存到目标 circ 文件
 
     print(f"已将 {源circuit地址} 中的所有像素信息去除，并保存到 {目标circ文件地址}")
 
@@ -266,18 +186,21 @@ if __name__ == "__main__":
         sys.exit(1)
 
     elif 模式 == "del":
-        清除原有像素(启.目标, 启.circuit名称)
+        logisim内容 = Logisim内容()
+        logisim内容.从文件加载内容(启.目标)
+        logisim内容.清除原有像素(启.circuit名称)
+        logisim内容.保存内容到文件(启.目标)
 
     elif 模式 == "add":
+        logisim内容 = Logisim内容()
+        logisim内容.从文件加载内容(启.目标)
+
         if 启.是否删除原先的像素信息:
-            清除原有像素(启.目标, 启.circuit名称)
+            logisim内容.清除原有像素(启.circuit名称)
 
         像素信息 = 解析图像文件(启.源, 50, 40)  # 这里dx, dy可根据需要调整
-        添加新像素(
-            启.目标,
-            启.circuit名称,
-            像素信息,
-        )
+        logisim内容.添加新像素(启.circuit名称, 像素信息)
+        logisim内容.保存内容到文件(启.目标)
 
     elif 模式 == "conv":
         像素信息 = 解析图像文件(启.源, 50, 40)
@@ -297,9 +220,9 @@ if __name__ == "__main__":
 
     elif 模式 == "store":
         添加像素信息_从circ文件_到库(
-            启.目标,
-            启.circuit名称,
             启.源,
+            启.circuit名称,
+            启.目标,
         )
 
     elif 模式 == "去图":
