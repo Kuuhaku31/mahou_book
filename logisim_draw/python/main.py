@@ -4,22 +4,9 @@ import os
 import re
 import sys
 
+from helps import 打印帮助信息, 打印模式启动失败信息
 from PIL import Image
 from tqdm import tqdm
-
-# <a>
-#   <circuit name="test">
-#       <appear>
-#           <rect fill="#ff4d75" height="1" stroke="none" width="1" x="60" y="100"/>
-#           <rect fill="#ff4d75" height="1" stroke="none" width="1" x="70" y="100"/>
-#           <rect fill="#ff4d75" height="1" stroke="none" width="1" x="80" y="110"/>
-#           ...
-#           <rect fill="#ffffff" height="65" stroke="#000000" stroke-width="2" width="88" x="90" y="112"/>
-#           <circ-port height="8" pin="140,210" width="8" x="46" y="66"/>
-#           <circ-anchor facing="east" height="6" width="6" x="77" y="57"/>
-#       </appear>
-#   </circuit>
-# </a>
 
 
 # 返回一个字符串，保存解析出的像素信息
@@ -89,7 +76,7 @@ def 清除原有像素(目标circ文件地址: str, 目标circuit名称: str) ->
 
 
 # 添加新像素到指定的circuit标签下的<appear>标签中
-def 添加新像素(目标circ文件地址: str, 目标circuit名称: str, 新内容: str) -> None:
+def 添加新像素_从图片文件(目标circ文件地址: str, 目标circuit名称: str, 新内容: str) -> None:
     with open(目标circ文件地址, "r", encoding="utf-8") as f:
         html_content = f.read()
 
@@ -132,37 +119,7 @@ def 添加新像素_从html文件(目标circ文件地址: str, 源html文件地�
     if 是否删除原先的像素信息:
         清除原有像素(目标circ文件地址, 源circuit名称)
 
-    添加新像素(目标circ文件地址, 源circuit名称, 新内容)
-
-
-def 打印帮助信息():
-    help_text = """
-格式: python main.py -m <模式> -t <目标circ文件地址> -p <待加载图像地址> -l <目标标签名称>
-
-### 参数
-
-| 参数        | 功能                      |
-| ----------- | ------------------------- |
-| -m          | 指定模式                  |
-| -t          | 指定目标文件地址          |
-| -s          | 指定源文件地址            |
-| -l          | 指定目标 circuit 标签名称 |
-| -p          | 指定待加载图像地址        |
-| -h --help   | 打印帮助信息              |
-| -rm_current | 是否删除原先的像素信息    |
-
-### 模式
-
-| 模式 | 功能                                           | 此模式下有效参数                                                            |
-| ---- | ---------------------------------------------- | --------------------------------------------------------------------------- |
-| del  | 删除指定目标 circuit 标签下的所有像素          | -t <circ 文件地址> -l <circuit 标签名称>                                    |
-| add  | 将图片添加到目标 circ 文件                     | -t <circ 文件地址> -p <待加载图像地址> -l <circuit 标签名称> -rm_current    |
-| conv | 将图片转换为像素信息                           | -t <保存像素信息的 html 文件地址> -p <待加载图像地址> -l <circuit 标签名称> |
-| load | 从指定的 html 文件加载像素信息到目标 circ 文件 | -t <circ 文件地址> -s <待加载像素信息的 html 文件地址> -rm_current          |
-
-"""
-
-    print(help_text)
+    添加新像素_从图片文件(目标circ文件地址, 源circuit名称, 新内容)
 
 
 class 启动参数处理:
@@ -210,33 +167,30 @@ if __name__ == "__main__":
 
     # 主逻辑
     if not 参数.模式:
-        print("缺少参数: -m")
-        打印帮助信息()
+        打印模式启动失败信息(参数.模式)
         sys.exit(1)
 
     if 参数.模式 == "del":
         if not 参数.目标文件地址 or not 参数.目标circuit名称:
-            print("缺少参数: -t 或 -l")
-            打印帮助信息()
+            打印模式启动失败信息(参数.模式)
             sys.exit(1)
+
         清除原有像素(参数.目标文件地址, 参数.目标circuit名称)
 
     elif 参数.模式 == "add":
         if not 参数.目标文件地址 or not 参数.目标circuit名称 or not 参数.待加载图像地址:
-            print("缺少参数: -t、-l 或 -p")
-            打印帮助信息()
+            打印模式启动失败信息(参数.模式)
             sys.exit(1)
 
         if 参数.是否删除原先的像素信息:
             清除原有像素(参数.目标文件地址, 参数.目标circuit名称)
 
         像素信息 = 解析图像文件(参数.待加载图像地址, 50, 40)  # 这里dx, dy可根据需要调整
-        添加新像素(参数.目标文件地址, 参数.目标circuit名称, 像素信息)
+        添加新像素_从图片文件(参数.目标文件地址, 参数.目标circuit名称, 像素信息)
 
     elif 参数.模式 == "conv":
         if not 参数.目标文件地址 or not 参数.待加载图像地址 or not 参数.目标circuit名称:
-            print("缺少参数: -t、-p 或 -l")
-            打印帮助信息()
+            打印模式启动失败信息(参数.模式)
             sys.exit(1)
 
         像素信息 = 解析图像文件(参数.待加载图像地址, 50, 40)
@@ -244,13 +198,11 @@ if __name__ == "__main__":
 
     elif 参数.模式 == "load":
         if not 参数.目标文件地址 or not 参数.源文件地址:
-            print("缺少参数: -t 或 -s")
-            打印帮助信息()
+            打印模式启动失败信息(参数.模式)
             sys.exit(1)
 
         添加新像素_从html文件(参数.目标文件地址, 参数.源文件地址, 参数.是否删除原先的像素信息)
 
     else:
-        print(f"未知模式: {参数.模式}")
-        打印帮助信息()
+        打印模式启动失败信息(参数.模式)
         sys.exit(1)

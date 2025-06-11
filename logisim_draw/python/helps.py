@@ -1,24 +1,10 @@
-# Logisim Draw
+# helps.py
 
-### circ 文件结构
 
-```html
-<a>
-  ...
-  <circuit name="test">
-    ...
-    <appear>
-      <rect fill="#ff4d75" height="1" stroke="none" width="1" x="60" y="100" />
-      <rect fill="#ff4d75" height="1" stroke="none" width="1" x="70" y="100" />
-      <rect fill="#ff4d75" height="1" stroke="none" width="1" x="80" y="110" />
-      ...
-      <rect fill="#ffffff" height="65" stroke="#000000" stroke-width="2" width="88" x="90" y="112" />
-      <circ-port height="8" pin="140,210" width="8" x="46" y="66" />
-      <circ-anchor facing="east" height="6" width="6" x="77" y="57" />
-    </appear>
-  </circuit>
-</a>
-```
+# 打印帮助信息
+def 打印帮助信息():
+    help_text = """
+格式: python main.py -m <模式> -t <目标circ文件地址> -p <待加载图像地址> -l <目标标签名称>
 
 ### 参数
 
@@ -40,3 +26,25 @@
 | add  | 将图片添加到目标 circ 文件                     | -t <circ 文件地址> -p <待加载图像地址> -l <circuit 标签名称> -rm_current    |
 | conv | 将图片转换为像素信息                           | -t <保存像素信息的 html 文件地址> -p <待加载图像地址> -l <circuit 标签名称> |
 | load | 从指定的 html 文件加载像素信息到目标 circ 文件 | -t <circ 文件地址> -s <待加载像素信息的 html 文件地址> -rm_current          |
+
+"""
+
+    print(help_text)
+
+
+# 每个模式下的启动失败信息
+def 打印模式启动失败信息(模式):
+    if 模式 == "del":
+        print("删除模式启动失败: 请提供 -t 和 -l 参数")
+    elif 模式 == "add":
+        print("添加模式启动失败: 请提供 -t、-l 和 -p 参数")
+    elif 模式 == "conv":
+        print("转换模式启动失败: 请提供 -t、-p 和 -l 参数")
+    elif 模式 == "load":
+        print("加载模式启动失败: 请提供 -t 和 -s 参数")
+    elif 模式 == "":
+        print("未指定模式，请使用 -m 参数指定")
+    else:
+        print(f"未知模式: {模式}")
+
+    打印帮助信息()
