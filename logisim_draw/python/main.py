@@ -128,7 +128,6 @@ class 启动参数处理:
         self.目标文件地址: str = ""
         self.源文件地址: str = ""
         self.目标circuit名称: str = ""
-        self.待加载图像地址: str = ""
         self.是否删除原先的像素信息: bool = False
 
     def 解析参数(self, args: list):
@@ -145,9 +144,6 @@ class 启动参数处理:
                 i += 2
             elif args[i] == "-l" and i + 1 < len(args):
                 self.目标circuit名称 = args[i + 1]
-                i += 2
-            elif args[i] == "-p" and i + 1 < len(args):
-                self.待加载图像地址 = args[i + 1]
                 i += 2
             elif args[i] == "-rm_current":
                 self.是否删除原先的像素信息 = True
@@ -178,22 +174,22 @@ if __name__ == "__main__":
         清除原有像素(参数.目标文件地址, 参数.目标circuit名称)
 
     elif 参数.模式 == "add":
-        if not 参数.目标文件地址 or not 参数.目标circuit名称 or not 参数.待加载图像地址:
+        if not 参数.目标文件地址 or not 参数.目标circuit名称 or not 参数.源文件地址:
             打印模式启动失败信息(参数.模式)
             sys.exit(1)
 
         if 参数.是否删除原先的像素信息:
             清除原有像素(参数.目标文件地址, 参数.目标circuit名称)
 
-        像素信息 = 解析图像文件(参数.待加载图像地址, 50, 40)  # 这里dx, dy可根据需要调整
+        像素信息 = 解析图像文件(参数.源文件地址, 50, 40)  # 这里dx, dy可根据需要调整
         添加新像素_从图片文件(参数.目标文件地址, 参数.目标circuit名称, 像素信息)
 
     elif 参数.模式 == "conv":
-        if not 参数.目标文件地址 or not 参数.待加载图像地址 or not 参数.目标circuit名称:
+        if not 参数.目标文件地址 or not 参数.源文件地址 or not 参数.目标circuit名称:
             打印模式启动失败信息(参数.模式)
             sys.exit(1)
 
-        像素信息 = 解析图像文件(参数.待加载图像地址, 50, 40)
+        像素信息 = 解析图像文件(参数.源文件地址, 50, 40)
         保存像素信息到html文件(参数.目标文件地址, 像素信息, 参数.目标circuit名称)
 
     elif 参数.模式 == "load":
