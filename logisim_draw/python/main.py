@@ -36,17 +36,28 @@ def 解析图像文件(图片地址: str, dx: int, dy: int) -> str:
 # 将像素信息保存到 HTML 文件
 # 第一行保存 circuit标签名称
 # 第二行保存像素信息
-def 保存像素信息到html文件(输出文件地址: str, 像素信息: str, circuit标签名称: str) -> None:
+def 保存像素信息到html文件(库文件夹路径: str, 像素信息: str, circuit标签名称: str) -> None:
 
     # 确保输出目录存在
-    os.makedirs(os.path.dirname(输出文件地址), exist_ok=True)
+    # <库文件夹路径>/<circuit标签名称>.html
+    文件地址 = os.path.join(库文件夹路径, f"{circuit标签名称}.html")
+    if not os.path.exists(库文件夹路径):
+        os.makedirs(库文件夹路径)
+    # 确保文件夹路径存在
+    if not os.path.isdir(库文件夹路径):
+        print(f"错误: {库文件夹路径} 不是一个有效的文件夹路径")
+        return
+    # 确保文件地址是一个有效的文件路径
+    if not 文件地址.endswith(".html"):
+        print(f"错误: {文件地址} 不是一个有效的 HTML 文件路径")
+        return
 
     # 写入文件
-    with open(输出文件地址, "w", encoding="utf-8") as f:
+    with open(文件地址, "w", encoding="utf-8") as f:
         f.write(circuit标签名称)
         f.write("\n")
         f.write(像素信息)
-    print(f"像素信息已保存到 {输出文件地址}")
+    print(f"像素信息已保存到 {文件地址}")
 
 
 # 函数逻辑：
@@ -76,7 +87,7 @@ def 清除原有像素(目标circ文件地址: str, 目标circuit名称: str) ->
 
 
 # 添加新像素到指定的circuit标签下的<appear>标签中
-def 添加新像素_从图片文件(目标circ文件地址: str, 目标circuit名称: str, 新内容: str) -> None:
+def 添加新像素(目标circ文件地址: str, 目标circuit名称: str, 新内容: str) -> None:
     with open(目标circ文件地址, "r", encoding="utf-8") as f:
         html_content = f.read()
 
@@ -100,10 +111,16 @@ def 添加新像素_从图片文件(目标circ文件地址: str, 目标circuit�
 
 
 # 从指定的 HTML 文件加载像素信息到目标 circ 文件
-def 添加新像素_从html文件(目标circ文件地址: str, 源html文件地址: str, 是否删除原先的像素信息: bool) -> None:
+def 添加新像素_从html文件(
+    目标circ文件地址: str,
+    目标circuit名称: str,
+    像素库的文件夹路径: str,
+    是否删除原先的像素信息: bool,
+) -> None:
 
     # 读取源HTML文件内容
-    with open(源html文件地址, "r", encoding="utf-8") as f:
+    文件地址 = os.path.join(像素库的文件夹路径, f"{目标circuit名称}.html")
+    with open(文件地址, "r", encoding="utf-8") as f:
         html_content = f.read()
 
     # 第一行是circuit标签名称
@@ -119,7 +136,12 @@ def 添加新像素_从html文件(目标circ文件地址: str, 源html文件地�
     if 是否删除原先的像素信息:
         清除原有像素(目标circ文件地址, 源circuit名称)
 
-    添加新像素_从图片文件(目标circ文件地址, 源circuit名称, 新内容)
+    添加新像素(目标circ文件地址, 源circuit名称, 新内容)
+
+    print(f"已从 {文件地址} 加载像素信息到 {目标circ文件地址} 的 {目标circuit名称} 标签下")
+
+    if 是否删除原先的像素信息:
+        print(f"并且已删除 {目标circ文件地址} 中 {目标circuit名称} 标签下的原有像素信息")
 
 
 class 启动参数处理:
@@ -182,7 +204,7 @@ if __name__ == "__main__":
             清除原有像素(参数.目标文件地址, 参数.目标circuit名称)
 
         像素信息 = 解析图像文件(参数.源文件地址, 50, 40)  # 这里dx, dy可根据需要调整
-        添加新像素_从图片文件(参数.目标文件地址, 参数.目标circuit名称, 像素信息)
+        添加新像素(参数.目标文件地址, 参数.目标circuit名称, 像素信息)
 
     elif 参数.模式 == "conv":
         if not 参数.目标文件地址 or not 参数.源文件地址 or not 参数.目标circuit名称:
@@ -193,11 +215,11 @@ if __name__ == "__main__":
         保存像素信息到html文件(参数.目标文件地址, 像素信息, 参数.目标circuit名称)
 
     elif 参数.模式 == "load":
-        if not 参数.目标文件地址 or not 参数.源文件地址:
+        if not 参数.目标文件地址 or not 参数.源文件地址 or not 参数.目标circuit名称:
             打印模式启动失败信息(参数.模式)
             sys.exit(1)
 
-        添加新像素_从html文件(参数.目标文件地址, 参数.源文件地址, 参数.是否删除原先的像素信息)
+        添加新像素_从html文件(参数.目标文件地址, 参数.目标circuit名称, 参数.源文件地址, 参数.是否删除原先的像素信息)
 
     else:
         打印模式启动失败信息(参数.模式)
