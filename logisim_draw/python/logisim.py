@@ -1,6 +1,6 @@
 # logisim.py
 
-import re
+import xml.etree.ElementTree as ET
 from math import inf
 
 
@@ -15,30 +15,28 @@ from math import inf
 # - 获取像素信息：获取指定 circuit 标签下的 <appear> 标签中的像素信息
 class Logisim内容:
     def __init__(己):
-        己.内容 = None
+        己.HTML根: ET.Element = None  # 初始化内容为 None
 
     def 从文件加载内容(己, 文件路径: str) -> None:
         try:
-            with open(文件路径, "r", encoding="utf-8") as f:
-                己.内容 = f.read()
+            print(f"正在加载文件 {文件路径}...")
+
+            tree = ET.parse(文件路径)
+            己.HTML根 = tree.getroot()
+            print(f"已成功加载文件 {文件路径}")
+
         except FileNotFoundError:
             print(f"文件 {文件路径} 未找到")
         except Exception as e:
             print(f"加载文件时发生错误: {e}")
 
-    def 保存内容到文件(己, 文件路径: str, 不在则创建文件: bool = False) -> None:
-        """将内容保存到指定文件"""
+    def 保存内容到文件(己, 文件路径: str) -> None:
         try:
-            with open(文件路径, "w", encoding="utf-8") as f:
-                f.write(己.内容)
-        except FileNotFoundError:
-            if 不在则创建文件:
-                # 如果文件不存在，则创建一个空文件
-                with open(文件路径, "w", encoding="utf-8") as f:
-                    f.write("")
-                print(f"文件 {文件路径} 不存在，已创建空文件")
-            else:
-                print(f"文件 {文件路径} 未找到")
+            print(f"正在保存内容到 {文件路径}...")
+            tree = ET.ElementTree(己.HTML根)
+            tree.write(文件路径, encoding="utf-8", xml_declaration=True)
+            print(f"内容已保存到 {文件路径}")
+
         except Exception as e:
             print(f"保存文件时发生错误: {e}")
 
@@ -46,113 +44,114 @@ class Logisim内容:
     # 遍历 <appear> 标签下的所有标签
     # 仅删除 height="1" 且 width="1" 的 <rect> 标签
     def 清除原有像素(己, 目标circuit名称: str) -> None:
+        for c in 己.HTML根.findall(".//circuit"):
+            if c.attrib.get("name") == 目标circuit名称:
+                appear = c.find("appear")
+                if appear is not None:
+                    rect_list = list(appear.findall("rect"))
+                    for rect in rect_list:
+                        if rect.attrib.get("width") == "1" and rect.attrib.get("height") == "1":
+                            appear.remove(rect)
 
-        # 找到指定circuit下的<appear>...</appear>
-        pattern = rf'(<circuit\s+name="{re.escape(目标circuit名称)}"[^>]*>.*?<appear>)(.*?)(</appear>)'
-        match = re.search(pattern, 己.内容, flags=re.DOTALL)
-        if not match:
-            print("未找到指定circuit或appear标签")
-            return
-
-        appear_content = match.group(2)
-
-        # 删除 height="1" 且 width="1" 的 <rect> 标签
-        appear_content = re.sub(r'<rect[^>]*height="1"[^>]*width="1"[^>]*\/>', "", appear_content)
-
-        # 替换 appear 内容
-        己.内容 = re.sub(pattern, rf"\1\n{appear_content}\3", 己.内容, flags=re.DOTALL)
-
-    # 清除所有 circuit 标签下的原有像素
+    # 清除所有circuit下的像素
     def 清除所有原有像素(己) -> None:
-        # 获取所有 circuit 标签名称
-        circuit_names = 己.获取所有circuit标签名称()
-        for circuit_name in circuit_names:
-            己.清除原有像素(circuit_name)
+        for c in 己.HTML根.findall(".//circuit"):
+            appear = c.find("appear")
+            if appear is not None:
+                rect_list = list(appear.findall("rect"))
+                for rect in rect_list:
+                    if rect.attrib.get("width") == "1" and rect.attrib.get("height") == "1":
+                        appear.remove(rect)
 
-    # 添加新像素到指定的circuit标签下的<appear>标签中
+    # 添加新像素到指定circuit
     def 添加新像素(己, 像素信息: dict, 目标circuit名称: str, 像素偏移向量: tuple[int, int] = None) -> None:
 
-        # 遍历像素列表，生成 <rect> 标签
-        新内容 = ""
-        for pixel in 像素信息["pixels"]:
+        if 像素信息 is not None:
+            print(f"正在向 {目标circuit名称} 添加 {len(像素信息['pixels'])} 个像素")
+        else:
+            print("像素信息是 None")
 
-            # 计算 x 和 y 坐标
-            # 如果提供了像素偏移向量，则使用它
-            # 否则使用像素信息中的偏移量
-            if 像素偏移向量:
-                x = pixel["x"] + 像素偏移向量[0]
-                y = pixel["y"] + 像素偏移向量[1]
-            else:
-                x = pixel["x"] + 像素信息["offset"]["x"]
-                y = pixel["y"] + 像素信息["offset"]["y"]
-
-            color = pixel["color"]
-
-            # 生成 <rect> 标签
-            新内容 += f'<rect x="{x}" y="{y}" width="1" height="1" fill="{color}" />\n'
-
-        # 找到指定circuit下的<appear>...</appear>
-        pattern = rf'(<circuit\s+name="{re.escape(目标circuit名称)}"[^>]*>.*?<appear>)(.*?)(</appear>)'
-        match = re.search(pattern, 己.内容, flags=re.DOTALL)
-        if not match:
-            print(f"在{目标circuit名称}中未找到 appear 标签")
+        # 确认像素信息合法性
+        if 像素信息 is None or not isinstance(像素信息, dict):
+            print("错误: 像素信息格式不正确")
             return
+        if "pixels" not in 像素信息 or not isinstance(像素信息["pixels"], list):
+            print("错误: 像素信息格式不正确或缺少 'pixels' 键")
+            return
+        if "offset" not in 像素信息:
+            像素信息["offset"] = {"x": 0, "y": 0}
 
-        appear_content = match.group(2)
+        for c in 己.HTML根.findall(".//circuit"):
+            if c.attrib.get("name") == 目标circuit名称:
+                appear = c.find("appear")
+                if appear is None:
+                    appear = ET.SubElement(c, "appear")
+                for pixel in 像素信息["pixels"]:
+                    if 像素偏移向量:
+                        x = pixel["x"] + 像素偏移向量[0]
+                        y = pixel["y"] + 像素偏移向量[1]
+                    else:
+                        x = pixel["x"] + 像素信息["offset"]["x"]
+                        y = pixel["y"] + 像素信息["offset"]["y"]
+                    color = pixel["color"]
+                    ET.SubElement(
+                        appear,
+                        "rect",
+                        {
+                            "x": str(x),
+                            "y": str(y),
+                            "width": "1",
+                            "height": "1",
+                            "fill": color,
+                        },
+                    )
 
-        # 在 appear_content 中添加新内容
-        appear_content += 新内容
-
-        # 替换 appear 内容
-        己.内容 = re.sub(pattern, rf"\1\n{appear_content}\3", 己.内容, flags=re.DOTALL)
+        print(f"已向 {目标circuit名称} 添加 {len(像素信息['pixels'])} 个像素")
 
     # 获取 内容 中指定 circuit 标签下的像素信息
     def 获取像素信息(己, 目标circuit名称: str) -> dict:
-        # 找到指定circuit下的<appear>...</appear>
-        pattern = rf'(<circuit\s+name="{re.escape(目标circuit名称)}"[^>]*>.*?<appear>)(.*?)(</appear>)'
-        match = re.search(pattern, 己.内容, flags=re.DOTALL)
-        if not match:
-            print(f"未找到指定circuit: {目标circuit名称} 或 appear 标签")
+
+        # 找到目标 circuit
+        circuit = None
+        for c in 己.HTML根.findall(".//circuit"):
+            if c.attrib.get("name") == 目标circuit名称:
+                circuit = c
+                break
+        if circuit is None:
+            print(f"未找到指定circuit: {目标circuit名称}")
             return None
 
-        appear_content = match.group(2)
+        # 找到 appear 标签
+        appear = circuit.find("appear")
+        if appear is None:
+            print(f"未找到 {目标circuit名称} 的 appear 标签")
+            return None
 
-        # 使用正则表达式匹配所有 <rect> 标签的 x, y 和 fill 属性
-        # 注意：这里假设所有 <rect> 标签都是 height="1" 且 width="1"
-        # <rect fill="#ffffff" height="65" stroke="#000000" stroke-width="2" width="88" x="90" y="112" />
-        src_pixels = re.findall(
-            r'<rect\b(?=[^>]*\bx="(\d+)")(?=[^>]*\by="(\d+)")(?=[^>]*\bwidth="1")(?=[^>]*\bheight="1")(?=[^>]*\bfill="([^"]+)")[^>]*\/>',
-            appear_content,
-        )
+        # 提取所有 width="1" height="1" 的 rect
+        pixels = []
+        min_x = inf
+        min_y = inf
+        for rect in appear.findall("rect"):
+            if rect.attrib.get("width") == "1" and rect.attrib.get("height") == "1":
+                x = int(rect.attrib.get("x", 0))
+                y = int(rect.attrib.get("y", 0))
+                color = rect.attrib.get("fill", "#000000")
+                min_x = min(min_x, x)
+                min_y = min(min_y, y)
+                pixels.append({"x": x, "y": y, "color": color})
 
-        像素信息: dict = {
-            "offset": {"x": 0, "y": 0},  # 假设偏移量为 (0, 0)，可以根据需要修改
-            "pixels": [],
-        }
+        # 偏移归零
+        for p in pixels:
+            p["x"] -= min_x
+            p["y"] -= min_y
 
-        # 将像素信息存入字典 pixels
-
-        # 先获取偏移向量
-        min_x: int = inf
-        min_y: int = inf
-        for pixel in src_pixels:
-            x, y, color = pixel
-            min_x = min(min_x, int(x))
-            min_y = min(min_y, int(y))
-
-        for pixel in src_pixels:
-            x, y, color = pixel
-            dst_pixels: list = 像素信息["pixels"]
-            dst_pixels.append({"x": int(x) - min_x, "y": int(y) - min_y, "color": color})
-
-        # 将 offset 设置为所有像素的最小 x 和 y 坐标
-        像素信息["offset"] = {"x": min_x, "y": min_y}
-
-        return 像素信息
+        # 如果没有找到任何像素，返回 None
+        if not pixels:
+            print(f"{目标circuit名称} 中未找到任何像素")
+            return None
+        else:
+            return {"offset": {"x": min_x, "y": min_y}, "pixels": pixels}
 
     # 获取 内容 中所有 circuit 标签名称
     def 获取所有circuit标签名称(己) -> list:
-        # 使用正则表达式匹配所有 <circuit name="..."> 标签
-        pattern = r'<circuit\s+name="([^"]+)"'
-        matches = re.findall(pattern, 己.内容)
-        return matches  # 返回所有匹配到的 circuit 名称列表
+        return [c.attrib.get("name") for c in 己.HTML根.findall(".//circuit") if c.attrib.get("name")]

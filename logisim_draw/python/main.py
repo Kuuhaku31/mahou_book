@@ -213,7 +213,7 @@ def 去图(目标circ文件地址: str, 源circuit地址: str) -> None:
     logisim内容 = Logisim内容()
     logisim内容.从文件加载内容(源circuit地址)
     logisim内容.清除所有原有像素()  # 清除所有 circuit 标签下的原有像素
-    logisim内容.保存内容到文件(目标circ文件地址, True)  # 保存到目标 circ 文件
+    logisim内容.保存内容到文件(目标circ文件地址)  # 保存到目标 circ 文件
 
     print(f"已将 {源circuit地址} 中的所有像素信息去除，并保存到 {目标circ文件地址}")
 
@@ -232,6 +232,8 @@ def 上图(目标circ文件地址: str, 无图circ地址: str, 像素库的路�
     标签名称列表 = logisim内容.获取所有circuit标签名称()
     for 标签名称 in 标签名称列表:
 
+        print(f"正在处理 {标签名称} 标签下的像素信息...")
+
         # 确认目标 JSON 文件存在
         文件地址 = 确认目标json文件存在(像素库的路径, 标签名称)
         if not 文件地址:
@@ -246,7 +248,7 @@ def 上图(目标circ文件地址: str, 无图circ地址: str, 像素库的路�
         logisim内容.添加新像素(像素信息, 标签名称)
 
     # 保存到目标 circ 文件
-    logisim内容.保存内容到文件(目标circ文件地址, True)
+    logisim内容.保存内容到文件(目标circ文件地址)
 
     print(f"已将 {像素库的路径} 中的所有像素信息添加到 {目标circ文件地址}")
 
