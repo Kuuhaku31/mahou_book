@@ -1,6 +1,7 @@
 # logisim.py
 
 import re
+from math import inf
 
 
 # 成员变量：
@@ -62,15 +63,22 @@ class Logisim内容:
             self.清除原有像素(circuit_name)
 
     # 添加新像素到指定的circuit标签下的<appear>标签中
-    def 添加新像素(self, 像素信息: dict, 目标circuit名称: str = None) -> None:
+    def 添加新像素(self, 像素信息: dict, 目标circuit名称: str, 像素偏移向量: tuple[int, int]) -> None:
 
         # 遍历像素列表，生成 <rect> 标签
         新内容 = ""
         for pixel in 像素信息["pixels"]:
 
             # 计算 x 和 y 坐标
-            x = pixel["x"] + 像素信息["offset"]["x"]
-            y = pixel["y"] + 像素信息["offset"]["y"]
+            # 如果提供了像素偏移向量，则使用它
+            # 否则使用像素信息中的偏移量
+            if 像素偏移向量:
+                x = pixel["x"] + 像素偏移向量[0]
+                y = pixel["y"] + 像素偏移向量[1]
+            else:
+                x = pixel["x"] + 像素信息["offset"]["x"]
+                y = pixel["y"] + 像素信息["offset"]["y"]
+
             color = pixel["color"]
 
             # 生成 <rect> 标签
@@ -104,8 +112,9 @@ class Logisim内容:
 
         # 使用正则表达式匹配所有 <rect> 标签的 x, y 和 fill 属性
         # 注意：这里假设所有 <rect> 标签都是 height="1" 且 width="1"
+        # <rect fill="#ffffff" height="65" stroke="#000000" stroke-width="2" width="88" x="90" y="112" />
         src_pixels = re.findall(
-            r'<rect\s+[^>]*x="(\d+)"\s+[^>]*y="(\d+)"\s+[^>]*width="1"\s+[^>]*height="1"\s+[^>]*fill="([^"]+)"\s*\/>',
+            r'<rect\b(?=[^>]*\bx="(\d+)")(?=[^>]*\by="(\d+)")(?=[^>]*\bwidth="1")(?=[^>]*\bheight="1")(?=[^>]*\bfill="([^"]+)")[^>]*\/>',
             appear_content,
         )
 
@@ -115,16 +124,19 @@ class Logisim内容:
         }
 
         # 将像素信息存入字典 pixels
-        min_x: int = 0
-        min_y: int = 0
+
+        # 先获取偏移向量
+        min_x: int = inf
+        min_y: int = inf
+        for pixel in src_pixels:
+            x, y, color = pixel
+            min_x = min(min_x, int(x))
+            min_y = min(min_y, int(y))
+
         for pixel in src_pixels:
             x, y, color = pixel
             dst_pixels: list = 像素信息["pixels"]
-            dst_pixels.append({"x": x, "y": y, "color": color})
-
-            # 更新最小 x 和 y 坐标
-            min_x = min(min_x, int(x))
-            min_y = min(min_y, int(y))
+            dst_pixels.append({"x": int(x) - min_x, "y": int(y) - min_y, "color": color})
 
         # 将 offset 设置为所有像素的最小 x 和 y 坐标
         像素信息["offset"] = {"x": min_x, "y": min_y}

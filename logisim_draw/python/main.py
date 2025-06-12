@@ -2,7 +2,6 @@
 
 import json
 import os
-import sys
 
 from helps import 打印帮助信息
 from init import 启动
@@ -13,15 +12,14 @@ from PIL import Image
 # 返回一个字典对象，保存解析出的像素信息
 def 解析图像文件(
     图片地址: str,
-    offset_x: int = 0,
-    offset_y: int = 0,
+    像素偏移向量: tuple[int, int],
 ) -> dict:
     image = Image.open(图片地址)  # 打开图像文件
     image = image.convert("RGB")  # 确保图像是RGB模式
     宽, 高 = image.size  # 获取图像的宽和高
 
     像素信息 = {
-        "offset": {"x": offset_x, "y": offset_y},
+        "offset": {"x": 像素偏移向量[0] if 像素偏移向量 else 0, "y": 像素偏移向量[1] if 像素偏移向量 else 0},
         "pixels": [],
     }
 
@@ -64,6 +62,50 @@ def 确保目标json文件存在(像素库的文件夹路径: str, 目标circuit
     return 文件地址
 
 
+def 删除目标circuit标签下像素(
+    circ文件地址: str,
+    circ标签名称: str,
+) -> None:
+    logisim内容 = Logisim内容()
+    logisim内容.从文件加载内容(circ文件地址)
+    logisim内容.清除原有像素(circ标签名称)
+    logisim内容.保存内容到文件(circ文件地址)
+
+
+def 将图片添加到circ文件(
+    circ文件地址: str,
+    circ标签名称: str,
+    图片文件地址: str,
+    像素偏移向量: tuple[int, int],
+    要删原先像素: bool,
+) -> None:
+
+    logisim内容 = Logisim内容()
+    logisim内容.从文件加载内容(circ文件地址)
+
+    if 要删原先像素:
+        logisim内容.清除原有像素(circ标签名称)
+
+    像素信息 = 解析图像文件(图片文件地址, 像素偏移向量)
+    logisim内容.添加新像素(像素信息, circ标签名称, 像素偏移向量)
+    logisim内容.保存内容到文件(circ文件地址)
+
+    print(f"已将 {图片文件地址} 中的像素信息添加到 {circ文件地址} 的 {circ标签名称} 标签下")
+
+    if 要删原先像素:
+        print(f"并且已删除 {circ文件地址} 中 {circ标签名称} 标签下的原有像素信息")
+
+
+def 将图片保存到像素库(
+    图片文件地址: str,
+    像素偏移向量: tuple[int, int],
+    像素库的路径: str,
+    circ标签名称: str,
+) -> None:
+    像素信息 = 解析图像文件(图片文件地址, 像素偏移向量)
+    保存像素信息到json文件(像素库的路径, 像素信息, circ标签名称)
+
+
 # 将像素信息保存到 json 文件
 # 第一行保存 circuit标签名称
 # 第二行保存像素信息
@@ -88,65 +130,77 @@ def 保存像素信息到json文件(
 
 # 从指定的 JSON 文件加载像素信息到目标 circ 文件
 def 添加像素信息_从库_到circ文件(
-    目标circ文件地址: str,
-    目标circuit名称: str,
-    像素库的文件夹路径: str,
-    是否删除原先的像素信息: bool,
+    circ文件地址: str,
+    circ标签名称: str,
+    像素库的路径: str,
+    库的标签名称: str,
+    像素偏移向量: tuple[int, int],
+    要删原先像素: bool,
 ) -> None:
 
+    print(f"正在从 {像素库的路径} 的 {库的标签名称} 标签下加载像素信息到 {circ文件地址} 的 {circ标签名称} 标签下")
+
     # 确认目标 circ 文件存在
-    文件地址 = 确认目标json文件存在(像素库的文件夹路径, 目标circuit名称)
+    文件地址 = 确认目标json文件存在(像素库的路径, 库的标签名称)
     if not 文件地址:
-        print(f"错误: {像素库的文件夹路径} 中未找到 {目标circuit名称}.json 文件")
         return
 
     # 读取 JSON 文件内容
     with open(文件地址, "r", encoding="utf-8") as f:
-        json_content = f.read()
-
-    像素信息: dict = json.loads(json_content)
+        像素信息: dict = json.loads(f.read())
 
     # 初始化 Logisim内容对象
     logisim内容 = Logisim内容()
-    logisim内容.从文件加载内容(目标circ文件地址)
+    logisim内容.从文件加载内容(circ文件地址)
 
     # 如果需要删除原有像素信息
-    if 是否删除原先的像素信息:
-        logisim内容.清除原有像素(目标circuit名称)
+    if 要删原先像素:
+        logisim内容.清除原有像素(circ标签名称)
 
-    logisim内容.添加新像素(像素信息, 目标circuit名称)
-    logisim内容.保存内容到文件(目标circ文件地址)  # 保存到目标 circ 文件
+    logisim内容.添加新像素(像素信息, circ标签名称, 像素偏移向量)
+    logisim内容.保存内容到文件(circ文件地址)  # 保存到目标 circ 文件
 
-    print(f"已从 {文件地址} 加载像素信息到 {目标circ文件地址} 的 {目标circuit名称} 标签下")
-
-    if 是否删除原先的像素信息:
-        print(f"并且已删除 {目标circ文件地址} 中 {目标circuit名称} 标签下的原有像素信息")
+    # 输出结果
+    print(f"已从 {文件地址} 的 {库的标签名称} 标签下加载像素信息到 {circ文件地址} 的 {circ标签名称} 标签下")
+    if 要删原先像素:
+        print(f"并且已删除 {circ文件地址} 中 {circ标签名称} 标签下的原有像素信息")
 
 
 # 将指定 circ 文件的指定 circuit 标签下的像素信息存储到指定的 HTML 文件中
 def 添加像素信息_从circ文件_到库(
-    目标circ文件地址: str,
-    目标circuit名称: str,
-    像素库的文件夹路径: str,
+    circ文件地址: str,
+    circ标签名称: str,
+    像素库的路径: str,
+    库的标签名称: str,
+    像素偏移向量: tuple[int, int],
 ) -> None:
-    print(f"正在将 {目标circuit名称} 标签下的像素信息存储到 {像素库的文件夹路径}")
+    print(
+        f"正在从 {circ文件地址} 的 {circ标签名称} 标签下加载像素信息，并保存到 {像素库的路径} 的 {库的标签名称} 标签下"
+    )
 
     # 初始化 Logisim内容对象
     logisim内容 = Logisim内容()
-    logisim内容.从文件加载内容(目标circ文件地址)
-    像素信息 = logisim内容.获取像素信息(目标circuit名称)
+    logisim内容.从文件加载内容(circ文件地址)
+    像素信息 = logisim内容.获取像素信息(circ标签名称)
+
+    # 优先添加用户指定的像素偏移向量
+    if 像素偏移向量 is not None:
+        像素信息["offset"] = {
+            "x": 像素偏移向量[0],
+            "y": 像素偏移向量[1],
+        }  # 添加像素偏移向量
 
     # 写入文件
     # 会覆盖掉原有的同名文件
     # 确保输出目录存在
-    文件地址 = 确保目标json文件存在(像素库的文件夹路径, 目标circuit名称)
+    文件地址 = 确保目标json文件存在(像素库的路径, 库的标签名称)
     if not 文件地址:
         return
 
     with open(文件地址, "w", encoding="utf-8") as f:
-        json.dump({"circuit_name": 目标circuit名称, "pixels": 像素信息}, f, ensure_ascii=False, indent=4)
+        json.dump(像素信息, f, ensure_ascii=False, indent=4)
 
-    print(f"已将 {目标circuit名称} 标签下的像素信息存储到 {文件地址}")
+    print(f"已将 {circ文件地址} 的 {circ标签名称} 标签下的像素信息保存到 {文件地址}")
 
 
 # 源 circ 文件中去除**所有** circuit 标签下的所有像素，并保存到目标地址
@@ -169,56 +223,54 @@ if __name__ == "__main__":
     print("Logisim Draw 像素处理工具")
 
     启 = 启动()
-    启.解析参数(sys.argv[1:])
 
-    模式: str = 启.是否可以启动模式()
-
-    if 模式 == "False":
+    if 启.程序运行模式 is None:
         print("启动失败，请检查参数是否正确")
         打印帮助信息()
-        sys.exit(1)
 
-    elif 模式 == "del":
-        logisim内容 = Logisim内容()
-        logisim内容.从文件加载内容(启.目标)
-        logisim内容.清除原有像素(启.circuit名称)
-        logisim内容.保存内容到文件(启.目标)
-
-    elif 模式 == "add":
-        logisim内容 = Logisim内容()
-        logisim内容.从文件加载内容(启.目标)
-
-        if 启.是否删除原先的像素信息:
-            logisim内容.清除原有像素(启.circuit名称)
-
-        像素信息 = 解析图像文件(启.源)
-        logisim内容.添加新像素(启.circuit名称, 像素信息)
-        logisim内容.保存内容到文件(启.目标)
-
-    elif 模式 == "conv":
-        像素信息 = 解析图像文件(启.源)
-        保存像素信息到json文件(
-            启.目标,
-            像素信息,
-            启.circuit名称,
+    elif 启.程序运行模式 == "del":
+        删除目标circuit标签下像素(
+            启.circ文件地址,
+            启.circ标签名称,
         )
 
-    elif 模式 == "load":
+    elif 启.程序运行模式 == "add":
+        将图片添加到circ文件(
+            启.circ文件地址,
+            启.circ标签名称,
+            启.图片文件地址,
+            启.像素偏移向量,
+            启.要删原先像素,
+        )
+
+    elif 启.程序运行模式 == "conv":
+        将图片保存到像素库(
+            启.图片文件地址,
+            启.像素偏移向量,
+            启.像素库的路径,
+            启.库的标签名称,
+        )
+
+    elif 启.程序运行模式 == "load":
         添加像素信息_从库_到circ文件(
-            启.目标,  # 目标 circ 文件地址
-            启.circuit名称,
-            启.源,  # 像素库的文件夹路径
-            启.是否删除原先的像素信息,
+            启.circ文件地址,
+            启.circ标签名称,
+            启.像素库的路径,
+            启.库的标签名称,
+            启.像素偏移向量,
+            启.要删原先像素,
         )
 
-    elif 模式 == "store":
+    elif 启.程序运行模式 == "store":
         添加像素信息_从circ文件_到库(
-            启.源,
-            启.circuit名称,
-            启.目标,
+            启.circ文件地址,
+            启.circ标签名称,
+            启.像素库的路径,
+            启.库的标签名称,
+            启.像素偏移向量,
         )
 
-    elif 模式 == "去图":
-        去图(启.目标, 启.源)
+    # elif 启.程序运行模式 == "去图":
+    #     去图(启.目标, 启.源)
 
     print("程序结束")
