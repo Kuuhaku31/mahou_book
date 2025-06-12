@@ -99,6 +99,11 @@ class 启动:
                 print("存储 模式启动失败，必须需提供的参数: -t -rep -lc -lr")
                 己.程序运行模式 = None
 
+        elif 己.程序运行模式 == "store_all":
+            if not 己.circ文件地址 or not 己.像素库的路径:
+                print("存储所有 模式启动失败，必须需提供的参数: -t -rep")
+                己.程序运行模式 = None
+
         elif 己.程序运行模式 == "去图":
             if not 己.circ文件地址 or not 己.无图circ地址:
                 print("去图 模式启动失败，必须需提供的参数: -t -t_np")
