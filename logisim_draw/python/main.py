@@ -143,6 +143,7 @@ def 添加像素信息_从库_到circ文件(
     # 确认目标 circ 文件存在
     文件地址 = 确认目标json文件存在(像素库的路径, 库的标签名称)
     if not 文件地址:
+        print(f"未找到 {像素库的路径} 中的 {库的标签名称}.json 文件，跳过")
         return
 
     # 读取 JSON 文件内容
@@ -212,9 +213,42 @@ def 去图(目标circ文件地址: str, 源circuit地址: str) -> None:
     logisim内容 = Logisim内容()
     logisim内容.从文件加载内容(源circuit地址)
     logisim内容.清除所有原有像素()  # 清除所有 circuit 标签下的原有像素
-    logisim内容.保存内容到文件(目标circ文件地址)  # 保存到目标 circ 文件
+    logisim内容.保存内容到文件(目标circ文件地址, True)  # 保存到目标 circ 文件
 
     print(f"已将 {源circuit地址} 中的所有像素信息去除，并保存到 {目标circ文件地址}")
+
+
+# 将像素库的**所有**像素信息添加到目标 circ 文件的相对应的 circuit 标签下
+#  然后把更新后的 circ 文件保存到指定位置
+def 上图(目标circ文件地址: str, 无图circ地址: str, 像素库的路径: str) -> None:
+
+    print(f"正在将 {像素库的路径} 中的所有像素信息添加到 {目标circ文件地址}")
+
+    # 初始化 Logisim内容对象
+    logisim内容 = Logisim内容()
+    logisim内容.从文件加载内容(无图circ地址)
+
+    # 获取所有 circuit 标签名称
+    标签名称列表 = logisim内容.获取所有circuit标签名称()
+    for 标签名称 in 标签名称列表:
+
+        # 确认目标 JSON 文件存在
+        文件地址 = 确认目标json文件存在(像素库的路径, 标签名称)
+        if not 文件地址:
+            print(f"未找到 {像素库的路径} 中的 {标签名称}.json 文件，跳过")
+            continue
+
+        # 读取 JSON 文件内容
+        with open(文件地址, "r", encoding="utf-8") as f:
+            像素信息: dict = json.loads(f.read())
+
+        # 添加新像素到指定的circuit标签下
+        logisim内容.添加新像素(像素信息, 标签名称)
+
+    # 保存到目标 circ 文件
+    logisim内容.保存内容到文件(目标circ文件地址, True)
+
+    print(f"已将 {像素库的路径} 中的所有像素信息添加到 {目标circ文件地址}")
 
 
 # main
@@ -270,7 +304,10 @@ if __name__ == "__main__":
             启.像素偏移向量,
         )
 
-    # elif 启.程序运行模式 == "去图":
-    #     去图(启.目标, 启.源)
+    elif 启.程序运行模式 == "去图":
+        去图(启.无图circ地址, 启.circ文件地址)
+
+    elif 启.程序运行模式 == "上图":
+        上图(启.circ文件地址, 启.无图circ地址, 启.像素库的路径)
 
     print("程序结束")

@@ -12,6 +12,7 @@ class 启动:
         # 初始化成员变量
         己.程序运行模式: str = None
         己.circ文件地址: str = None
+        己.无图circ地址: str = None
         己.像素库的路径: str = None
         己.circ标签名称: str = None
         己.库的标签名称: str = None
@@ -29,6 +30,10 @@ class 启动:
 
             elif 参数列表[索] == "-t" and 索 + 1 < len(参数列表):
                 己.circ文件地址 = 参数列表[索 + 1]
+                索 += 2
+
+            elif 参数列表[索] == "-t_np" and 索 + 1 < len(参数列表):
+                己.无图circ地址 = 参数列表[索 + 1]
                 索 += 2
 
             elif 参数列表[索] == "-rep" and 索 + 1 < len(参数列表):
@@ -64,9 +69,9 @@ class 启动:
                 sys.exit(0)
 
             else:
+                # 处理未知参数
                 print(f"未知参数: {参数列表[索]}")
-                打印帮助信息()
-                sys.exit(1)
+                索 += 1
 
         # 检查是否提供了必要的参数
         if 己.程序运行模式 == "del":
@@ -81,12 +86,12 @@ class 启动:
 
         elif 己.程序运行模式 == "conv":
             if not 己.circ文件地址 or not 己.像素库的路径 or not 己.circ标签名称:
-                print("转换模式启动失败: 请提供 -t、-rep 和 -lc 参数")
+                print("转换 模式启动失败: 请提供 -t、-rep 和 -lc 参数")
                 己.程序运行模式 = None
 
         elif 己.程序运行模式 == "load":
             if not 己.circ文件地址 or not 己.像素库的路径 or not 己.circ标签名称:
-                print("加载模式启动失败: 请提供 -t、-rep 和 -lc 参数")
+                print("加载 模式启动失败: 请提供 -t、-rep 和 -lc 参数")
                 己.程序运行模式 = None
 
         elif 己.程序运行模式 == "store":
@@ -95,9 +100,14 @@ class 启动:
                 己.程序运行模式 = None
 
         elif 己.程序运行模式 == "去图":
-            # if not 己.circ文件地址 or not 己.源:
-            #     print("去图模式启动失败: 请提供 -t 和 -s 参数")
-            己.程序运行模式 = None
+            if not 己.circ文件地址 or not 己.无图circ地址:
+                print("去图 模式启动失败，必须需提供的参数: -t -t_np")
+                己.程序运行模式 = None
+
+        elif 己.程序运行模式 == "上图":
+            if not 己.circ文件地址 or not 己.无图circ地址 or not 己.像素库的路径:
+                print("上图 模式启动失败，必须需提供的参数: -t -t_np -rep")
+                己.程序运行模式 = None
 
         elif 己.程序运行模式 == "":
             print("未指定模式，请使用 -m 参数指定")
@@ -111,6 +121,7 @@ class 启动:
         # 打印解析结果
         print(f"程序运行模式: {己.程序运行模式}")
         print(f"circ文件地址: {己.circ文件地址}")
+        print(f"无图circ地址: {己.无图circ地址}")
         print(f"像素库的路径: {己.像素库的路径}")
         print(f"circ标签名称: {己.circ标签名称}")
         print(f"库的标签名称: {己.库的标签名称}")
