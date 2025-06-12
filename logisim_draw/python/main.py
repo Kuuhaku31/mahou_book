@@ -278,6 +278,35 @@ def STORE_ALL(
     print(f"已将 {circ文件地址} 的所有像素信息存储到 {像素库的路径}")
 
 
+def LOAD_ALL(
+    # 必须参数
+    circ文件地址: str,
+    像素库的路径: str,
+    # 可选参数
+    像素偏移向量: tuple[int, int] = None,
+    要删原先像素: bool = False,
+) -> None:
+    print(f"正在从 {像素库的路径} 中加载所有像素信息到 {circ文件地址}")
+
+    # 初始化 Logisim内容对象
+    logisim内容 = Logisim内容()
+    logisim内容.从文件加载内容(circ文件地址)
+
+    # 获取所有 circuit 标签名称
+    标签名称列表 = logisim内容.获取所有circuit标签名称()
+    for 标签名称 in 标签名称列表:
+        添加像素信息_从库_到circ文件(
+            circ文件地址,
+            标签名称,
+            像素库的路径,
+            标签名称,
+            像素偏移向量,
+            要删原先像素,
+        )
+
+    print(f"已将 {像素库的路径} 中的所有像素信息加载到 {circ文件地址}")
+
+
 # main
 if __name__ == "__main__":
 
@@ -318,6 +347,16 @@ if __name__ == "__main__":
             启.circ标签名称,
             启.像素库的路径,
             启.库的标签名称,
+            启.像素偏移向量,
+            启.要删原先像素,
+        )
+
+    elif 启.程序运行模式 == "load_all":
+        LOAD_ALL(
+            # 必须参数
+            启.circ文件地址,
+            启.像素库的路径,
+            # 可选参数
             启.像素偏移向量,
             启.要删原先像素,
         )

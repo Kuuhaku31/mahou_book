@@ -33,6 +33,7 @@ Y: 可选参数<br>
 | add       | O   | X     | X    | O   | X   | O   | Y    | Y       | 将图片添加到目标 circ 文件                                                                                          |
 | conv      | X   | X     | O    | X   | O   | O   | Y    | X       | 将图片转换为像素信息，保存到像素库                                                                                  |
 | load      | O   | X     | O    | O   | O   | X   | Y    | Y       | 从像素库加载像素信息到目标 circ 文件                                                                                |
+| load_all  | O   | X     | O    | X   | X   | X   | Y    | Y       | 从像素库加载像素信息到目标 circ 文件                                                                                |
 | store     | O   | X     | O    | O   | O   | X   | Y    | X       | 将指定 circ 文件的指定 circuit 标签下的像素信息存储到库                                                             |
 | store_all | O   | X     | O    | X   | X   | X   | Y    | X       | 将指定 circ 文件的**所有** circuit 标签下的像素信息存储到库                                                         |
 | 去图      | O   | O     | X    | X   | X   | X   | X    | X       | 从目标 circ 文件中去除**所有** circuit 标签下的所有像素，并保存到目标地址                                           |

@@ -94,6 +94,11 @@ class 启动:
                 print("加载 模式启动失败: 请提供 -t、-rep 和 -lc 参数")
                 己.程序运行模式 = None
 
+        elif 己.程序运行模式 == "load_all":
+            if not 己.circ文件地址 or not 己.像素库的路径:
+                print("加载所有 模式启动失败，必须需提供的参数: -t -rep")
+                己.程序运行模式 = None
+
         elif 己.程序运行模式 == "store":
             if not 己.circ文件地址 or not 己.像素库的路径 or not 己.circ标签名称 or not 己.库的标签名称:
                 print("存储 模式启动失败，必须需提供的参数: -t -rep -lc -lr")
