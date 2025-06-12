@@ -62,7 +62,19 @@ class Logisim内容:
             self.清除原有像素(circuit_name)
 
     # 添加新像素到指定的circuit标签下的<appear>标签中
-    def 添加新像素(self, 目标circuit名称: str, 新内容: str) -> None:
+    def 添加新像素(self, 像素信息: dict, 目标circuit名称: str = None) -> None:
+
+        # 遍历像素列表，生成 <rect> 标签
+        新内容 = ""
+        for pixel in 像素信息["pixels"]:
+
+            # 计算 x 和 y 坐标
+            x = pixel["x"] + 像素信息["offset"]["x"]
+            y = pixel["y"] + 像素信息["offset"]["y"]
+            color = pixel["color"]
+
+            # 生成 <rect> 标签
+            新内容 += f'<rect x="{x}" y="{y}" width="1" height="1" fill="{color}" />\n'
 
         # 找到指定circuit下的<appear>...</appear>
         pattern = rf'(<circuit\s+name="{re.escape(目标circuit名称)}"[^>]*>.*?<appear>)(.*?)(</appear>)'
@@ -80,15 +92,44 @@ class Logisim内容:
         self.内容 = re.sub(pattern, rf"\1\n{appear_content}\3", self.内容, flags=re.DOTALL)
 
     # 获取 内容 中指定 circuit 标签下的像素信息
-    def 获取像素信息(self, 目标circuit名称: str) -> str:
+    def 获取像素信息(self, 目标circuit名称: str) -> dict:
         # 找到指定circuit下的<appear>...</appear>
         pattern = rf'(<circuit\s+name="{re.escape(目标circuit名称)}"[^>]*>.*?<appear>)(.*?)(</appear>)'
         match = re.search(pattern, self.内容, flags=re.DOTALL)
         if not match:
             print(f"未找到指定circuit: {目标circuit名称} 或 appear 标签")
-            return ""
+            return None
 
-        return match.group(2)  # 返回 appear 标签中的内容
+        appear_content = match.group(2)
+
+        # 使用正则表达式匹配所有 <rect> 标签的 x, y 和 fill 属性
+        # 注意：这里假设所有 <rect> 标签都是 height="1" 且 width="1"
+        src_pixels = re.findall(
+            r'<rect\s+[^>]*x="(\d+)"\s+[^>]*y="(\d+)"\s+[^>]*width="1"\s+[^>]*height="1"\s+[^>]*fill="([^"]+)"\s*\/>',
+            appear_content,
+        )
+
+        像素信息: dict = {
+            "offset": {"x": 0, "y": 0},  # 假设偏移量为 (0, 0)，可以根据需要修改
+            "pixels": [],
+        }
+
+        # 将像素信息存入字典 pixels
+        min_x: int = 0
+        min_y: int = 0
+        for pixel in src_pixels:
+            x, y, color = pixel
+            dst_pixels: list = 像素信息["pixels"]
+            dst_pixels.append({"x": x, "y": y, "color": color})
+
+            # 更新最小 x 和 y 坐标
+            min_x = min(min_x, int(x))
+            min_y = min(min_y, int(y))
+
+        # 将 offset 设置为所有像素的最小 x 和 y 坐标
+        像素信息["offset"] = {"x": min_x, "y": min_y}
+
+        return 像素信息
 
     # 获取 内容 中所有 circuit 标签名称
     def 获取所有circuit标签名称(self) -> list:
