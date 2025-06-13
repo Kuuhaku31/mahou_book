@@ -169,19 +169,14 @@ def 添加像素信息_从库_到circ文件(
 
 # 将指定 circ 文件的指定 circuit 标签下的像素信息存储到指定的 HTML 文件中
 def 添加像素信息_从circ文件_到库(
-    circ文件地址: str,
+    logisim内容: Logisim内容,
     circ标签名称: str,
     像素库的路径: str,
     库的标签名称: str,
     像素偏移向量: tuple[int, int],
 ) -> None:
-    print(
-        f"正在从 {circ文件地址} 的 {circ标签名称} 标签下加载像素信息，并保存到 {像素库的路径} 的 {库的标签名称} 标签下"
-    )
 
     # 初始化 Logisim内容对象
-    logisim内容 = Logisim内容()
-    logisim内容.从文件加载内容(circ文件地址)
     像素信息 = logisim内容.获取像素信息(circ标签名称)
 
     # 优先添加用户指定的像素偏移向量
@@ -201,7 +196,7 @@ def 添加像素信息_从circ文件_到库(
     with open(文件地址, "w", encoding="utf-8") as f:
         json.dump(像素信息, f, ensure_ascii=False, indent=4)
 
-    print(f"已将 {circ文件地址} 的 {circ标签名称} 标签下的像素信息保存到 {文件地址}")
+    print(f"已从 {circ标签名称} 标签下加载像素信息，并保存到 {像素库的路径} 的 {库的标签名称} 标签下")
 
 
 # 源 circ 文件中去除**所有** circuit 标签下的所有像素，并保存到目标地址
@@ -270,7 +265,7 @@ def STORE_ALL(
     标签名称列表 = logisim内容.获取所有circuit标签名称()
     for 标签名称 in 标签名称列表:
         添加像素信息_从circ文件_到库(
-            circ文件地址,
+            logisim内容,
             标签名称,
             像素库的路径,
             标签名称,
@@ -364,8 +359,10 @@ if __name__ == "__main__":
         )
 
     elif 启.程序运行模式 == "store":
+        logisim内容 = Logisim内容()
+        logisim内容.从文件加载内容(启.circ文件地址)
         添加像素信息_从circ文件_到库(
-            启.circ文件地址,
+            logisim内容,
             启.circ标签名称,
             启.像素库的路径,
             启.库的标签名称,
