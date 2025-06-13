@@ -46,7 +46,7 @@ class Logisim内容:
             己.HTML根 = tree.getroot()
             己.文件路径 = 文件路径
 
-            己.__格式打印(f"已成功加载文件 {文件路径}\n", "green")
+            己.__格式打印(f"已成功加载文件 {文件路径}", "green")
 
         except FileNotFoundError:
             己.__终止程序(f"文件 {文件路径} 未找到")
@@ -57,10 +57,10 @@ class Logisim内容:
         try:
             tree = ET.ElementTree(己.HTML根)
             tree.write(文件路径, encoding="utf-8", xml_declaration=True)
-            己.__格式打印("内容已保存\n", "green")
+            己.__格式打印("内容已保存到文件: " + 文件路径, "green")
 
         except Exception as e:
-            己.__终止程序(f"保存文件时发生错误: {e}\n")
+            己.__终止程序(f"保存文件时发生错误: {e}")
 
     # 函数逻辑：
     # 遍历 <appear> 标签下的所有标签
@@ -74,7 +74,7 @@ class Logisim内容:
                     for rect in rect_list:
                         if rect.attrib.get("width") == "1" and rect.attrib.get("height") == "1":
                             appear.remove(rect)
-        己.__格式打印(f"已删除[{目标circuit名称}]标签下的所有像素\n")
+        己.__格式打印(f"已删除[{目标circuit名称}]标签下的所有像素", "green")
 
     # 清除所有circuit下的像素
     def 清除所有原有像素(己) -> None:
@@ -85,7 +85,7 @@ class Logisim内容:
                 for rect in rect_list:
                     if rect.attrib.get("width") == "1" and rect.attrib.get("height") == "1":
                         appear.remove(rect)
-        己.__格式打印("已删除所有标签下的所有像素\n")
+        己.__格式打印("已删除所有标签下的所有像素", "green")
 
     # 添加新像素到指定circuit
     def 添加新像素(己, 像素信息: dict, 目标circuit名称: str, 像素偏移向量: tuple[int, int] = None) -> None:
@@ -98,15 +98,15 @@ class Logisim内容:
             己.__格式打印("警告: 添加的像素数量超过 90000 个，这可能会导致 Logisim 无法正常工作。", "yellow")
             确认 = input("  是否继续添加？(y/n): ")
             if 确认.lower() != "y":
-                己.__格式打印("已取消本次添加像素操作\n", "yellow")
+                己.__格式打印("已取消本次添加像素操作", "yellow")
                 return
 
         # 确认像素信息合法性
         if 像素信息 is None or not isinstance(像素信息, dict):
-            己.__格式打印("像素信息格式不正确\n", "yellow")
+            己.__格式打印("像素信息格式不正确", "yellow")
             return
         if "pixels" not in 像素信息 or not isinstance(像素信息["pixels"], list):
-            己.__格式打印("像素信息格式不正确或缺少 'pixels' 键\n", "yellow")
+            己.__格式打印("像素信息格式不正确或缺少 'pixels' 键", "yellow")
             return
         if "offset" not in 像素信息:
             像素信息["offset"] = {"x": 0, "y": 0}
@@ -137,7 +137,7 @@ class Logisim内容:
                         },
                     )
 
-        己.__格式打印(f"已向 {目标circuit名称} 添加 {像素数量} 个像素\n")
+        己.__格式打印(f"已向 {目标circuit名称} 添加 {像素数量} 个像素", "green")
 
     # 获取 内容 中指定 circuit 标签下的像素信息
     def 获取像素信息(己, 目标circuit名称: str) -> dict:
@@ -179,15 +179,15 @@ class Logisim内容:
 
         # 如果没有找到任何像素，返回 None
         if not pixels:
-            己.__格式打印(f"{目标circuit名称} 中未找到任何像素\n", "yellow")
+            己.__格式打印(f"{目标circuit名称} 中未找到任何像素", "yellow")
             return None
         else:
-            己.__格式打印(f"已找到 {目标circuit名称} 中 {len(pixels)} 个像素\n")
+            己.__格式打印(f"已找到 {目标circuit名称} 中 {len(pixels)} 个像素", "green")
             return {"offset": {"x": min_x, "y": min_y}, "pixels": pixels}
 
     # 获取 内容 中所有 circuit 标签名称
     def 获取所有circuit标签名称(己) -> list[str]:
         res = [c.attrib.get("name") for c in 己.HTML根.findall(".//circuit") if c.attrib.get("name")]
 
-        己.__格式打印(f"已找到 {len(res)} 个 circuit 标签名称: {', '.join(res)}\n", "green")
+        己.__格式打印(f"已找到 {len(res)} 个 circuit 标签名称: {', '.join(res)}", "green")
         return res
