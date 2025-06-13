@@ -66,8 +66,19 @@ class Logisim内容:
     # 添加新像素到指定circuit
     def 添加新像素(己, 像素信息: dict, 目标circuit名称: str, 像素偏移向量: tuple[int, int] = None) -> None:
 
+        像素数量 = len(像素信息["pixels"]) if 像素信息 and "pixels" in 像素信息 else 0
+
+        # 用醒目的颜色打印警告信息
+        # 并要求用户输入 y 确认
+        if 像素数量 > 90000:
+            print("\033[93m警告: 添加的像素数量超过 90000 个，这可能会导致 Logisim 无法正常工作。\033[0m")
+            确认 = input("是否继续添加？(y/n): ")
+            if 确认.lower() != "y":
+                print("已取消本次添加像素操作")
+                return
+
         if 像素信息 is not None:
-            print(f"正在向 {目标circuit名称} 添加 {len(像素信息['pixels'])} 个像素")
+            print(f"正在向 {目标circuit名称} 添加 {像素数量} 个像素")
         else:
             print("像素信息是 None")
 
